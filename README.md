@@ -1,43 +1,46 @@
 # sasha.html
-The nicest way to encrypt some "very important images" ( ͡° ͜ʖ ͡°). Fast and safe like a handjob.
+
+Projeto inspirado no repositório https://github.com/dav1app/sasha.html
+
+A forma mais legal de criptografar algumas "imagens muito importantes" ( ͡° ͜ʖ ͡°). Rápido e seguro como uma *******.
 
 ![alt text](https://github.com/davimello28/sasha.html/blob/master/printscreen.png)
 
-## What is it?
-It is a small auto-replicant HTML file that encrypts a file and creates another HTML file with the encrypted file inside. Each HTML can encrypt another files, so you don't need to install or access anything. You only need a browser. 
+## O que é isso?
+É um pequeno arquivo HTML autorreplicante que criptografa um arquivo e cria outro arquivo HTML com o arquivo criptografado dentro. Cada HTML pode criptografar outros arquivos, então você não precisa instalar ou acessar nada. Você só precisa de um navegador.
 
-## Why?
-I believe that encryption should be available to everybody. I wrote this on HTML + CSS + JS purely because I believe this is the easiest way to make everybody understand what is going on.
+## Por quê?
+Eu acredito que a criptografia deveria estar disponível para todo mundo. Escrevi isso em HTML + CSS + JS justamente porque acredito que essa é a forma mais fácil de fazer todo mundo entender o que está acontecendo.
 
-## Why this is cool?
-Because you don't need to install anything but the browser. Every browser that supports the Web.crypto functions can decrypt the files (Safari still doesn't have this). Also, some files can be opened directly into the browser, without the need to download it.
+## Por que isso é legal?
+Porque você não precisa instalar nada além do navegador. Qualquer navegador que suporte as funções do Web.crypto consegue descriptografar os arquivos (o Safari ainda não tem isso). Além disso, alguns arquivos podem ser abertos diretamente no navegador, sem precisar baixá-los.
 
-## How to use it?
-Just open `sasha.html` and type a password, than select a file **(on that order)**. After that, the download prompt should open. 
+## Como usar?
+Basta abrir o `sasha.html` e digitar uma senha, depois selecionar um arquivo **(nessa ordem)**. Depois disso, o prompt de download deve abrir.
 
-Try opening the HTML file that we downloaded and you are going to see 2 different boxes. One is for new encription files, the other is your file. Type your password and check your file. 
+Tente abrir o arquivo HTML que baixamos e você vai ver 2 caixas diferentes. Uma é para novos arquivos de criptografia, a outra é o seu arquivo. Digite sua senha e confira seu arquivo.
 
-## What do we need to improve?
-- Basically everything. I coded it in only one night. I am not 100% satisfied with the code.
-- The files are getting twice their size due to HEX saving. We should change it to encode it better. The ideal size is filesize + sasha.html minified.
-- It is not minified yet (6kb). It should be, but we need to be a little careful because the file is auto-replicant. 
-- We need to check if the files opened in the browser are stored somewhere on the computer. Understanding how the browser works with this files is desirable.
-- I am not sure if the AES-GCM with SHA-256 is secure enought and this files are sensible to brute force attacks.
-- Encripting multiple files is a pain in the arrrs.
-- We should have a better testing for browser compatibility.
-- Optimizing buf2hex and hex2buf functions.
-- More consistent filesize limitations.
+## O que precisamos melhorar?
+- Basicamente tudo. Eu codei isso em apenas uma noite. Não estou 100% satisfeito com o código.
+- Os arquivos estão ficando com o dobro do tamanho por causa do salvamento em HEX. Deveríamos mudar isso para codificar melhor. O tamanho ideal seria filesize + sasha.html minificado.
+- Ainda não está minificado (6kb). Deveria estar, mas precisamos ter um pouco de cuidado porque o arquivo é autorreplicante.
+- Precisamos verificar se os arquivos abertos no navegador ficam armazenados em algum lugar do computador. Entender como o navegador lida com esses arquivos é desejável.
+- Não tenho certeza se o AES-GCM com SHA-256 é seguro o suficiente e se esses arquivos são sensíveis a ataques de força bruta.
+- Criptografar múltiplos arquivos é um saco.
+- Precisamos de melhores testes de compatibilidade entre navegadores.
+- Otimizar as funções buf2hex e hex2buf.
+- Limitações de tamanho de arquivo mais consistentes.
 
-## Is there a filesize limit?
-So, nice question. My research results are inconsistent. I am pretty sure that files arround 50mb can be encripted and decripted just fine in Chrome, Firefox and Opera (updated ones). As a final answer: it depends on the browser.
+## Existe um limite de tamanho de arquivo?
+Boa pergunta. Meus resultados de pesquisa são inconsistentes. Tenho bastante certeza de que arquivos em torno de 50mb podem ser criptografados e descriptografados sem problemas no Chrome, Firefox e Opera (versões atualizadas). Como resposta final: depende do navegador.
 
-## How you can help? 
-- Please use the Issues.
-- Feel free to make pull requests.
+## Como você pode ajudar?
+- Por favor, use as Issues.
+- Sinta-se à vontade para fazer pull requests.
 
-## License
-- I am not responsable for any damage of the file. I use this for myself, and it has worked like a charm.
-- Also, I am not responsable for your browser. 
-- If you are going to use this as a corporate solution, be aware that I do not recommend this! Seriously, don't do that.
-- Don't sell it to anyone. This thing is free and it is important to keep it that way.
-- Be kind to others.
+## Licença
+- Não sou responsável por nenhum dano ao arquivo. Eu uso isso para mim mesmo, e tem funcionado perfeitamente.
+- Também não sou responsável pelo seu navegador.
+- Se você for usar isso como uma solução corporativa, saiba que eu não recomendo isso! Sério, não faça isso.
+- Não venda isso para ninguém. Essa coisa é gratuita e é importante mantê-la assim.
+- Seja gentil com os outros.
