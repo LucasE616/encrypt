@@ -1,0 +1,305 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<style>
+	/*
+		Estilo único da página:
+		- body,html: centraliza tudo vertical e horizontalmente, ocupando 100% da altura
+		- .box: caixa cinza usada para as duas seções (nova criptografia / abrir arquivo)
+		- input[type="button"]: espaçamento entre botões
+	*/
+	body,html{display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif}.box{background-color:#ccc;text-align:center;margin:4px;padding:30px}input[type="button"]{margin:4px}
+	</style>
+	<script>
+		/*
+			Variáveis "de dados" do arquivo.
+			Em um arquivo NOVO (baixado do site), elas ficam vazias ('').
+			Quando este HTML é gerado como um "cofre" (vault) por createVaultFile(),
+			estas três linhas são substituídas via regex pelos dados criptografados,
+			o IV usado na criptografia e o MIME type original do arquivo.
+			É assim que o HTML se torna "autorreplicante": ele carrega o arquivo
+			criptografado dentro de si mesmo.
+		*/
+		var DATA_STRING_HEX = '';
+		var DATA_IV = '';
+		var DATA_TYPE = '';
+	</script>
+</head>
+<body>
+	<!-- Bloco 1: formulário para CRIAR um novo arquivo criptografado -->
+	<div class="box">
+		<h1>( ͡° ͜ʖ ͡°)</h1>
+		<h2>New file</h2>
+		<div>
+			<p>Set password for new encrypted file:</p>
+			<input id="password-new" type="password"></div>
+			<p>Than select the files:</p>
+			<!-- Ao escolher um arquivo, dispara sashaIn(), que inicia todo o fluxo de criptografia -->
+			<input type="file" id="fileRead" onChange="sashaIn(this);" multiple>
+		</div>
+	</div>
+	<!--
+		Bloco 2: formulário para ABRIR (descriptografar) o arquivo já embutido neste HTML.
+		Fica escondido (hidden) quando o arquivo é "vazio" (DATA_STRING_HEX == ''),
+		ou seja, quando é o sasha.html original, sem nenhum dado dentro.
+	-->
+	<div id="thisData" class="box">
+		<h1>( ͡° ͜ʖ ͡°)</h1>
+		<h2>Open this file</h2>
+		<div>
+			<p>Password:</p>
+			<input id="password-file" type="password">
+		</div>
+		<!-- Ao clicar, dispara sashaOut(), que descriptografa DATA_STRING_HEX e baixa o arquivo original -->
+		<input type="button" onClick="sashaOut()" value="View">
+	</div>
+<script>
+'use strict';
+
+// Verificação básica de suporte do navegador às APIs de arquivo necessárias (File, FileReader, FileList, Blob)
+if (!window.File && !window.FileReader && !window.FileList && !window.Blob) {
+	alert('Erro: Your browser does not suport Sasha.');
+}
+
+// Se não há dados embutidos (arquivo "em branco"), esconde a caixa "Open this file";
+// se há dados (arquivo é um cofre gerado), mostra essa caixa.
+DATA_STRING_HEX=='' ? document.getElementById('thisData').hidden = true : document.getElementById('thisData').hidden = false
+
+//Main functions
+
+/*
+	sashaIn: disparada ao selecionar um arquivo no input "New file".
+	Encadeia todo o fluxo de criação do cofre:
+	1. getFile          -> lê o arquivo escolhido como ArrayBuffer
+	2. encriptFile      -> criptografa esse ArrayBuffer com a senha informada
+	3. createVaultFile  -> gera o HTML completo (cópia de si mesmo) com os dados criptografados embutidos
+	4. downloadVaultFile-> dispara o download desse novo HTML para o usuário
+*/
+const sashaIn = (element) => {
+	Promise.resolve(getFile(element))
+	.then(encriptFile)
+	.then(createVaultFile)
+	.then(downloadVaultFile)
+	.catch(e => {console.log(e)})
+}
+
+/*
+	sashaOut: disparada ao clicar em "View" na caixa "Open this file".
+	Pega os dados globais embutidos no próprio HTML (DATA_STRING_HEX, DATA_IV, DATA_TYPE),
+	tenta descriptografá-los com a senha digitada e, se der certo, baixa o arquivo original.
+	Se a senha estiver errada, decriptFile rejeita a Promise e o catch mostra o alerta de erro.
+*/
+const sashaOut = () => {
+	Promise.resolve({data: window.DATA_STRING_HEX, iv: window.DATA_IV, type: window.DATA_TYPE})
+	.then(decriptFile)
+	.catch(e => {
+		throw alert("Incorrect password.");
+	})
+	.then(downloadFile)
+	.catch(e => {console.log(e)})
+}
+
+//Major functions
+
+/*
+	getFile: recebe o <input type="file">, lê o primeiro arquivo selecionado como ArrayBuffer
+	(via FileReader) e resolve uma Promise com os bytes brutos (filedata) e o MIME type original.
+*/
+const getFile = (element) => {
+	return new Promise((resolve, reject) => {
+		let fr = new FileReader()
+		fr.onloadend = () => {
+			resolve({filedata: fr.result, type: element.files[0].type})
+		}
+		fr.readAsArrayBuffer(element.files[0])
+	})
+}
+
+/*
+	encriptFile: criptografa o ArrayBuffer do arquivo usando AES-GCM.
+	- Lê a senha digitada no campo "password-new"
+	- Gera um IV aleatório de 12 bytes (obrigatório para AES-GCM)
+	- Deriva a chave de criptografia fazendo SHA-256 da senha (a hash de 256 bits vira a chave AES)
+	- Criptografa os dados com essa chave e esse IV
+	- Retorna tudo já convertido para base64 (data e iv), mais o type original do arquivo,
+	  pronto para ser embutido como texto dentro do HTML gerado
+*/
+const encriptFile = async (file) => {
+	const password =        document.getElementById('password-new').value;
+	const iv =              util.getRandomBytes(12);
+	const alg =             {name: 'AES-GCM', iv: iv};
+	const passwordHash =    await util.sha256(util.textEncoder(password));
+	const key =             await util.importKey('raw', passwordHash, alg, false, ['encrypt']);
+	const encriptedData =   await util.encrypt(alg, key, file.filedata);
+
+	return { data: util.hex2base64(util.buf2hex(encriptedData)), iv: util.hex2base64(util.buf2hex(iv)), type: file.type}
+}
+
+/*
+	decriptFile: processo inverso de encriptFile.
+	- Lê a senha digitada no campo "password-file"
+	- Reconstrói o IV original a partir do base64 salvo no HTML
+	- Deriva a mesma chave (SHA-256 da senha)
+	- Converte o dado criptografado de base64 de volta para bytes
+	- Tenta descriptografar; se a senha estiver errada, o AES-GCM falha (rejeita a Promise),
+	  o que é usado para detectar "senha incorreta" em sashaOut()
+*/
+const decriptFile = async (data) => {
+	const password =        document.getElementById('password-file').value;
+	const alg =             {name: 'AES-GCM', iv: util.hex2buf(util.base642hex(data.iv))};
+	const passwordHash =    await util.sha256(util.textEncoder(password));
+	const key =             await util.importKey('raw', passwordHash, alg, false, ['decrypt']);
+	const alter_data   =    util.hex2buf(util.base642hex(data.data))
+	const decryptedData =   await util.decrypt(alg, key, alter_data);
+
+	return decryptedData
+}
+
+/*
+	createVaultFile: é o coração do comportamento "autorreplicante" do Sasha.
+	Pega o innerHTML da própria tag <html> (ou seja, uma cópia completa do HTML atual,
+	incluindo este mesmo <script>), e substitui via regex as três linhas:
+		var DATA_STRING_HEX = '...'
+		var DATA_IV = '...'
+		var DATA_TYPE = '...'
+	pelos valores recém-criptografados. O resultado é uma string com um HTML completo
+	e independente, que já nasce com o arquivo criptografado embutido dentro dele.
+*/
+const createVaultFile = (encriptedData) => {
+	let vault = 		document.getElementsByTagName('html')[0].innerHTML;
+	let vaultWithData = vault
+	.replace(/var DATA_STRING_HEX = '.*'/, `var DATA_STRING_HEX = '${encriptedData.data}'` )
+	.replace(/var DATA_IV = '.*'/, `var DATA_IV = '${encriptedData.iv}'`)
+	.replace(/var DATA_TYPE = '.*'/, `var DATA_TYPE = '${encriptedData.type}'`)
+
+	return vaultWithData
+}
+
+/*
+	downloadVaultFile: recebe a string de HTML montada por createVaultFile e força o
+	download como "EncryptedFile.html", usando um link <a> temporário com data: URI.
+*/
+const downloadVaultFile = (data) =>{
+	var elem = 		window.document.createElement('a');
+	elem.href = 	'data:/html;charset=utf-8,' + encodeURIComponent(data);
+	elem.download = 'EncryptedFile.html';
+	document.body.appendChild(elem);
+	elem.click();
+	document.body.removeChild(elem);
+}
+
+/*
+	downloadFile: recebe o ArrayBuffer já descriptografado (o arquivo original) e força
+	o download dele como um Blob, usando o MIME type original (window.DATA_TYPE) para que
+	o navegador reconheça corretamente o tipo de arquivo (imagem, pdf, etc).
+*/
+const downloadFile = (decryptedData) => {
+	var elem = window.document.createElement('a');
+	let blob = new Blob( [decryptedData], { type: window.DATA_TYPE });
+	elem.href = window.URL.createObjectURL(blob);
+	document.body.appendChild(elem);
+	elem.click();
+	document.body.removeChild(elem);
+}
+
+//Ultility functions
+
+// Objeto que agrupa todas as funções utilitárias de criptografia e conversão de formatos
+var util = {}
+
+// Gera N bytes aleatórios criptograficamente seguros (usado para o IV do AES-GCM)
+util.getRandomBytes = (bytes) => {
+	return crypto.getRandomValues(new Uint8Array(bytes));
+}
+
+// Calcula o hash SHA-256 de um dado (usado para transformar a senha digitada em uma chave de 256 bits)
+util.sha256 = async (data) => {
+	return await crypto.subtle.digest({name:"SHA-256"}, data)
+}
+
+// Importa bytes crus como uma CryptoKey utilizável pela Web Crypto API (aqui, para AES-GCM)
+util.importKey = async(type, key, algo , isExtractable, applications) => {
+	return await crypto.subtle.importKey(type, key, algo , isExtractable, applications)
+}
+
+// Criptografa dados com a chave e algoritmo (AES-GCM) informados
+util.encrypt = async (algo, password , data) => {
+	return await crypto.subtle.encrypt(algo, password, data)
+}
+
+// Descriptografa dados com a chave e algoritmo (AES-GCM) informados
+util.decrypt = async (algo, password , data) => {
+	return await crypto.subtle.decrypt(algo, password, data)
+}
+
+// Converte uma string (ex: a senha) em bytes UTF-8, formato exigido pela Web Crypto API
+util.textEncoder = (string) => {
+	return new TextEncoder("utf-8").encode(string)
+}
+
+// Converte um ArrayBuffer de volta para string UTF-8 (função utilitária, não usada diretamente no fluxo atual)
+util.textDecoder = (ArrayBuffer) => {
+	return new TextDecoder("utf-8").decode(ArrayBuffer)
+}
+
+/*
+	buf2hex: converte um ArrayBuffer em uma string hexadecimal.
+	Usado para transformar os bytes criptografados (e o IV) em texto,
+	já que só é possível embutir texto dentro do HTML/JS gerado.
+*/
+util.buf2hex = (arrayBuffer) => {
+	if (typeof arrayBuffer !== 'object' || arrayBuffer === null || typeof arrayBuffer.byteLength !== 'number') {
+		throw new TypeError('Expected input to be an ArrayBuffer')
+	}
+
+	var view = new Uint8Array(arrayBuffer)
+	var result = ''
+	var value
+
+	for (var i = 0; i < view.length; i++) {
+		value = view[i].toString(16)
+		result += (value.length === 1 ? '0' + value : value)
+	}
+
+	return result
+}
+
+// hex2buf: processo inverso de buf2hex, converte a string hexadecimal de volta para um ArrayBuffer de bytes
+util.hex2buf = (hex) => {
+	if (typeof hex !== 'string') {
+		throw new TypeError('Expected input to be a string')
+	}
+	if ((hex.length % 2) !== 0) {
+		throw new RangeError('Expected string to be an even number of characters')
+	}
+	var view = new Uint8Array(hex.length / 2)
+	for (var i = 0; i < hex.length; i += 2) {
+		view[i / 2] = parseInt(hex.substring(i, i + 2), 16)
+	}
+	return view.buffer
+}
+
+/*
+	hex2base64: converte uma string hexadecimal para base64.
+	O resultado final embutido no HTML (DATA_STRING_HEX/DATA_IV) fica em base64,
+	que é mais compacto que hex para representar os mesmos bytes como texto.
+*/
+util.hex2base64 = (hex) => {
+    return btoa(String.fromCharCode.apply(null,
+      hex.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" "))
+    );
+}
+
+// base642hex: processo inverso de hex2base64, converte a string base64 salva no HTML de volta para hexadecimal
+util.base642hex = (base64) => {
+    for (var i = 0, bin = atob(base64.replace(/[ \r\n]+$/, "")), hex = []; i < bin.length; ++i) {
+        let tmp = bin.charCodeAt(i).toString(16);
+        if (tmp.length === 1) tmp = "0" + tmp;
+        hex[hex.length] = tmp;
+    }
+    return hex.join(" ");
+}
+
+</script>
+</body>
+</html>
