@@ -2,7 +2,7 @@
 
 Projeto inspirado no repositório https://github.com/dav1app/sasha.html
 
-A forma mais legal de criptografar algumas "imagens muito importantes" ( ͡° ͜ʖ ͡°). Rápido e seguro como uma *******.
+A forma mais legal de criptografar algumas "imagens muito importantes" ( ͡° ͜ʖ ͡°). Rápido e seguro.
 
 ![alt text](https://github.com/davimello28/sasha.html/blob/master/printscreen.png)
 
@@ -20,23 +20,8 @@ Basta abrir o `sasha.html` e digitar uma senha, depois selecionar um arquivo **(
 
 Tente abrir o arquivo HTML que baixamos e você vai ver 2 caixas diferentes. Uma é para novos arquivos de criptografia, a outra é o seu arquivo. Digite sua senha e confira seu arquivo.
 
-## O que precisamos melhorar?
-- Basicamente tudo. Eu codei isso em apenas uma noite. Não estou 100% satisfeito com o código.
-- Os arquivos estão ficando com o dobro do tamanho por causa do salvamento em HEX. Deveríamos mudar isso para codificar melhor. O tamanho ideal seria filesize + sasha.html minificado.
-- Ainda não está minificado (6kb). Deveria estar, mas precisamos ter um pouco de cuidado porque o arquivo é autorreplicante.
-- Precisamos verificar se os arquivos abertos no navegador ficam armazenados em algum lugar do computador. Entender como o navegador lida com esses arquivos é desejável.
-- Não tenho certeza se o AES-GCM com SHA-256 é seguro o suficiente e se esses arquivos são sensíveis a ataques de força bruta.
-- Criptografar múltiplos arquivos é um saco.
-- Precisamos de melhores testes de compatibilidade entre navegadores.
-- Otimizar as funções buf2hex e hex2buf.
-- Limitações de tamanho de arquivo mais consistentes.
-
 ## Existe um limite de tamanho de arquivo?
 Boa pergunta. Meus resultados de pesquisa são inconsistentes. Tenho bastante certeza de que arquivos em torno de 50mb podem ser criptografados e descriptografados sem problemas no Chrome, Firefox e Opera (versões atualizadas). Como resposta final: depende do navegador.
-
-## Como você pode ajudar?
-- Por favor, use as Issues.
-- Sinta-se à vontade para fazer pull requests.
 
 ## Licença
 - Não sou responsável por nenhum dano ao arquivo. Eu uso isso para mim mesmo, e tem funcionado perfeitamente.
